@@ -1,0 +1,62 @@
+---
+title: "practicaprogramada_3"
+author: "Juliana Cruz Gonzáles"
+date: "2023-12-10"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Limpieza de nombres de las columnas
+```{r}
+library(janitor)
+spotify_data <- clean_names(spotify_data)
+
+```
+
+```{r}
+library(shiny)
+library(shinydashboard)
+library(readr)
+library(dplyr)
+library(ggplot2)
+
+
+
+ui <- dashboardPage(
+  skin = "yellow",
+  dashboardHeader(title = "Top Songs by Spotify"),
+  dashboardSidebar(
+    selectInput("year", "Year", choices = unique(spotify_data$year)),
+    selectInput("genre", "Genre ", choices = unique(spotify_data$`top genre`)),
+    selectInput("title", "Song", choices = NULL, multiple = FALSE, selected = NULL),
+    downloadButton("downloadBtn", "Download data")
+  ),
+  dashboardBody(
+    tags$style(HTML(".small-box { background-color: yellow; }")), 
+    fluidRow(
+      valueBoxOutput("bpmBox"),
+      valueBoxOutput("energyBox"),
+      valueBoxOutput("durationBox")
+    ),
+    tabsetPanel(
+      tabPanel("Graph",
+               plotOutput("danceabilityPlot")),
+      tabPanel("Table",
+               dataTableOutput("dataTable"))
+    )
+  )
+)
+
+server <- function(input, output, session) {
+  
+spotify_data <- read_csv2("/Users/julianacruz/Desktop/shiny_app3/datos/spotify_2000_2023.csv")
+  
+ 
+}
+
+shinyApp(ui, server)
+
+```
