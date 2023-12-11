@@ -42,10 +42,11 @@ ui <- dashboardPage(
       valueBoxOutput("durationBox")
     ),
     tabsetPanel(
-      tabPanel("Graph",
-               plotOutput("danceabilityPlot")),
+      
       tabPanel("Table",
-               dataTableOutput("dataTable"))
+               dataTableOutput("dataTable")),
+      tabPanel("Chart",
+               plotOutput("danceabilityPlot"))
     )
   )
 )
@@ -53,6 +54,66 @@ ui <- dashboardPage(
 server <- function(input, output, session) {
   
 spotify_data <- read_csv2("/Users/julianacruz/Desktop/shiny_app3/datos/spotify_2000_2023.csv")
+
+ 
+  title_choices <- reactive({
+    filter(spotify_data, 
+           year == input$year,
+           `top genre` == input$genre) %>%
+      pull(title)
+  })
+
+
+  observe({
+    updateSelectInput(session, "title", choices = title_choices(), selected = NULL)
+  })
+
+
+  filtered_data <- reactive({
+    filter(spotify_data, 
+           year == input$year,
+           `top genre` == input$genre,
+           title %in% input$title)
+  })
+
+  
+  output$downloadBtn <- downloadHandler(
+    filename = function() {
+      paste("spotify_data_", input$year, "_", input$genre, ".csv", sep = "")
+    },
+    content = function(file) {
+      write_csv(filtered_data(), file)
+    }
+  )
+
+ 
+  output$bpmBox <- renderValueBox({
+    selected_song <- filter(filtered_data(), title %in% input$title)
+    valueBox(selected_song$bpm, "BPM")
+  })
+
+  output$energyBox <- renderValueBox({
+    selected_song <- filter(filtered_data(), title %in% input$title)
+    valueBox(selected_song$energy, "Energy")
+  })
+
+  output$durationBox <- renderValueBox({
+    selected_song <- filter(filtered_data(), title %in% input$title)
+    valueBox(selected_song$duration, "Duration (min)")
+  })
+
+
+output$danceabilityPlot <- renderPlot({
+  ggplot(filtered_data(), aes(x = bpm, y = danceability, color = valence)) +
+    geom_point() +
+    labs(title = "Gráfico danzabilidad según popularidad") +
+    scale_color_gradient(low = "blue", high = "red")  # Personaliza la escala de colores según tus necesidades
+})
+
+  # Tabla de datos
+  output$dataTable <- renderDataTable({
+    filtered_data()
+  })
   
  
 }
